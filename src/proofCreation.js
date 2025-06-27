@@ -1,5 +1,6 @@
 import { sha256 } from 'js-sha256';
 import * as snarkjs from 'snarkjs';
+import crypto from 'crypto';
 
 /*
  * @description Generates a zk-SNARK proof based on the provided user data.
@@ -28,7 +29,7 @@ async function generateProof({
         hash
     };
     // FIXME - Modifier le nom des circuits une fois qu'il seront créés
-    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, 'circuit.wasm', 'circuit_final.zkey');
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, '../data/proof_of_license_js/proof_of_license.wasm', '../data/circuit_final.zkey');
 
     return {
         proof,
