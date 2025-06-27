@@ -13,18 +13,22 @@ import crypto from 'crypto';
  */
 async function generateProof({
     name,
+    familyName,
     dob,
-    licsense
+    licsense,
+    expirationDate
 }) {
     const nonce = crypto.randomUUID();
 
-    const rawString = name + dob + licsense + nonce;
+    const rawString = name + familyName + dob + licsense + expirationDate + nonce;
     const hash = sha256(rawString);
 
     const input = {
         name,
+        familyName,
         dob: dateToUnix(dob),
         licsense,
+        expirationDate: dateToUnix(expirationDate),
         nonce,
         hash
     };
