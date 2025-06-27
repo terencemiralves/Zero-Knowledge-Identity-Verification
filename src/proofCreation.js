@@ -12,35 +12,63 @@ import crypto from 'crypto';
  * @throws {Error} - Throws an error if the proof generation fails.
  */
 async function generateProof({
-    name,
-    familyName,
-    dob,
-    licsense,
-    expirationDate
+  name,
+  familyName,
+  dob,
+  licsense,
+  expirationDate
 }) {
-    const nonce = crypto.randomUUID();
+  const nonce = crypto.randomUUID().slice(0, 8); // 8 chars nonce
 
-    const rawString = name + familyName + dob + licsense + expirationDate + nonce;
-    const hash = sha256(rawString);
+  const rawString = name + familyName + dob + licsense + expirationDate + nonce;
+  const hash = sha256(rawString);
 
-    const input = {
-        name,
-        familyName,
-        dob: dateToUnix(dob),
-        licsense,
-        expirationDate: dateToUnix(expirationDate),
-        nonce,
-        hash
-    };
-    // FIXME - Modifier le nom des circuits une fois qu'il seront créés
-    const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, '../data/proof_of_license_js/proof_of_license.wasm', '../data/circuit_final.zkey');
+  const input = {
+    pubName: stringToAsciiArray(name, 4),
+    pubSurname: stringToAsciiArray(familyName, 6),
+    privDate: stringToAsciiArray(dob, 10),
+    privLicense: [licsense.charCodeAt(0)],
+    privExpDate: stringToAsciiArray(expirationDate, 10),
+    nonce: stringToAsciiArray(nonce, 8),
+    commitment: hashToBitArray(hash),
+  };
 
-    return {
-        proof,
-        publicSignals,
-        input
-    };
+  const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+    input,
+    '../data/proof_of_license_js/proof_of_license.wasm',
+    '../data/circuit_final.zkey'
+  );
+
+  return { proof, publicSignals, input };
 }
+
+function stringToAsciiArray(str, length) {
+  const arr = new Array(length).fill(0);
+  for (let i = 0; i < str.length && i < length; i++) {
+    arr[i] = str.charCodeAt(i);
+  }
+  return arr;
+}
+
+function hexToBitArray(hexStr) {
+  const bits = [];
+  for (let i = 0; i < hexStr.length; i++) {
+    const nibble = parseInt(hexStr[i], 16);
+    // Convert each hex digit (4 bits) to bits array
+    bits.push((nibble & 8) >> 3);
+    bits.push((nibble & 4) >> 2);
+    bits.push((nibble & 2) >> 1);
+    bits.push(nibble & 1);
+  }
+  return bits;
+}
+
+function hashToBitArray(hash) {
+  const bits = hexToBitArray(hash);
+  // The circuit expects commitment[256], so slice to 256 bits:
+  return bits.slice(0, 256);
+}
+
 
 /*
 * @description Converts a date string in YYYY-MM-DD format to a Unix timestamp.
