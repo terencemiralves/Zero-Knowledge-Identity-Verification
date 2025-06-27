@@ -24,8 +24,8 @@ async function generateProof({
   const hash = sha256(rawString);
 
   const input = {
-    pubName: stringToAsciiArray(name, 4),
-    pubSurname: stringToAsciiArray(familyName, 6),
+    pubName: stringToAsciiArray(name, 64),
+    pubSurname: stringToAsciiArray(familyName, 64),
     privDate: stringToAsciiArray(dob, 10),
     privLicense: [licsense.charCodeAt(0)],
     privExpDate: stringToAsciiArray(expirationDate, 10),
