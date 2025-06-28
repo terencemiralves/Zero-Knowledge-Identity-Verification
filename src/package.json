@@ -1,0 +1,24 @@
+{
+  "name": "zk-license-verification",
+  "version": "1.0.0",
+  "description": "Système de vérification de permis zero-knowledge",
+  "main": "license_verification.js",
+  "scripts": {
+    "setup": "./setup.sh",
+    "test": "node test_verification.js",
+    "demo": "node license_verification.js"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "ffjavascript": "^0.2.63",
+    "snarkjs": "^0.7.5"
+  },
+  "keywords": [
+    "zero-knowledge",
+    "zk-snarks",
+    "identity",
+    "verification"
+  ],
+  "author": "Assistant",
+  "license": "MIT"
+}
