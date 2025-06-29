@@ -45,7 +45,7 @@ compile_circuit() {
     mkdir -p build
     
     # Compiler le circuit
-    circom -l ./circomlib/ proof_of_license.circom --r1cs --wasm --sym -o build/ 
+    circom -l ./node_modules/ build/licenseA.circom --r1cs --wasm --sym -o build/ 
     
     if [ $? -eq 0 ]; then
         echo "✅ Circuit compilé avec succès"
@@ -63,59 +63,81 @@ trusted_setup() {
     
     # Phase 1: Powers of Tau ceremony
     echo "Phase 1: Powers of Tau ceremony..."
-    node -e "
-        const snarkjs = require('snarkjs');
-        (async () => {
-            console.log('Génération de la ceremony...');
-            await snarkjs.powersOfTau.newAccumulator('ptau/pot12_0000.ptau', 12, 1);
-            console.log('Contribution 1...');
-            await snarkjs.powersOfTau.contribute('ptau/pot12_0000.ptau', 'ptau/pot12_0001.ptau', 'Contribution 1', entropy());
-            console.log('Contribution 2...');
-            await snarkjs.powersOfTau.contribute('ptau/pot12_0001.ptau', 'ptau/pot12_0002.ptau', 'Contribution 2', entropy());
-            console.log('Finalisation phase 1...');
-            await snarkjs.powersOfTau.beacon('ptau/pot12_0002.ptau', 'ptau/pot12_beacon.ptau', 'beacon', 10, entropy());
-            console.log('Préparation phase 2...');
-            await snarkjs.powersOfTau.prepare('ptau/pot12_beacon.ptau', 'ptau/pot12_final.ptau');
-            console.log('✅ Phase 1 terminée');
-        })();
-        
-        function entropy() {
-            return Math.random().toString(36).substring(2) + Date.now().toString(36);
-        }
-    "
-    
-    # Créer le répertoire ptau si nécessaire
-    mkdir -p ptau
+    if [ ! -d "data/ptau" ]; then
+        mkdir -p data/ptau
+    fi
+    if [ ! -f "data/ptau/pot18_0000.ptau" ]; then
+        touch data/ptau/pot18_0000.ptau
+    fi
+    if [ ! -f "data/ptau/pot18_beacon.ptau" ]; then
+        touch data/ptau/pot18_beacon.ptau
+    fi
+    if [ ! -f "data/ptau/pot18_final.ptau" ]; then
+
+        cd data/ptau
+        beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
+        echo "Création de la ceremony Powers of Tau..."
+        snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
+        echo "Contribution 1..."
+        snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        echo "Contribution 2..."
+        snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        echo "Finalisation de la phase 1 avec le beacon..."
+        snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
+        echo "Préparation de la phase 2..."
+        snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
+        echo "✅ Phase 1 terminée"
+        cd ../..
+    else
+        echo "La ceremony Powers of Tau est déjà terminée."
+    fi
     
     # Phase 2: Circuit-specific setup
-    echo "Phase 2: Circuit-specific setup..."
-    node -e "
-        const snarkjs = require('snarkjs');
-        const fs = require('fs');
-        (async () => {
-            console.log('Setup spécifique au circuit...');
-            await snarkjs.zKey.newZKey('proof_of_license.r1cs', 'ptau/pot12_final.ptau', 'proof_of_license_0000.zkey');
-            console.log('Contribution au zkey...');
-            await snarkjs.zKey.contribute('proof_of_license_0000.zkey', 'proof_of_license_0001.zkey', 'Contribution circuit', entropy());
-            console.log('Beacon pour le zkey...');
-            await snarkjs.zKey.beacon('proof_of_license_0001.zkey', 'proof_of_license_final.zkey', 'beacon', 10, entropy());
-            console.log('Export de la clé de vérification...');
-            const vKey = await snarkjs.zKey.exportVerificationKey('proof_of_license_final.zkey');
-            fs.writeFileSync('verification_key.json', JSON.stringify(vKey, null, 2));
-            console.log('✅ Phase 2 terminée');
-        })();
+    set -e  # Stop on error
+
+    echo "🔧 Phase 2 : Circuit-specific setup..."
+    
+    # Définir les chemins
+    R1CS="proof_of_license.r1cs"
+    PTAU="data/ptau/pot18_final.ptau"
+    ZKEY0="proof_of_license_0000.zkey"
+    ZKEY1="proof_of_license_0001.zkey"
+    ZKEY_FINAL="proof_of_license_final.zkey"
+    VKEY_JSON="verification_key.json"
+
+    if [ ! -f "$ZKEY_FINAL" ] || [ ! -f "$VKEY_JSON" ]; then
         
-        function entropy() {
-            return Math.random().toString(36).substring(2) + Date.now().toString(36);
-        }
-    "
+        # Étape 1 : Génération initiale du zkey
+        echo "📦 Setup initial du circuit..."
+        snarkjs zkey new $R1CS $PTAU $ZKEY0
+
+        # Étape 2 : Contribution au zkey
+        echo "🧑‍💻 Contribution au zkey..."
+        snarkjs zkey contribute $ZKEY0 $ZKEY1 --name="Contribution circuit" --entropy="$(head -c 64 /dev/urandom | base64)"
+
+        # Étape 3 : Beacon pour sécuriser le zkey final
+        echo "⚡ Beacon pour finaliser le zkey..."
+        snarkjs zkey beacon $ZKEY1 $ZKEY_FINAL \
+        "$(head -c 32 /dev/urandom | xxd -p -c 32)" \
+        10 -v
+
+        # Étape 4 : Export de la clé de vérification
+        echo "🔐 Export de la clé de vérification..."
+        snarkjs zkey export verificationkey $ZKEY_FINAL $VKEY_JSON
+        echo "✅ Phase 2 terminée avec succès"
+        cd ..
     
-    cd ..
+        # Copier les fichiers nécessaires dans le répertoire principal
+        cp build/proof_of_license_js/proof_of_license.wasm ./
+        cp build/proof_of_license_final.zkey ./
+        cp build/verification_key.json ./
+    else
+        echo "Les fichiers de setup existent déjà, aucune action nécessaire."
+        cd ..
+    fi
+
     
-    # Copier les fichiers nécessaires dans le répertoire principal
-    cp build/proof_of_license_js/proof_of_license.wasm ./
-    cp build/proof_of_license_final.zkey ./
-    cp build/verification_key.json ./
+    
     
     echo "✅ Trusted setup terminé"
 }
