@@ -54,7 +54,7 @@ compile_circuit() {
         exit 1
     fi
 
-    circom -l ./node_modules/ ./data/ls18/ls18.circom --r1cs --wasm --sym -o build/ 
+    circom -l ./node_modules/ ./data/Is18/Is18.circom --r1cs --wasm --sym -o build/ 
     
     if [ $? -eq 0 ]; then
         echo "✅ Circuit compilé avec succès"
@@ -84,18 +84,20 @@ trusted_setup() {
     if [ ! -f "ptau/pot18_final.ptau" ]; then
 
         cd ptau
-        beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
-        echo "Création de la ceremony Powers of Tau..."
-        snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
-        echo "Contribution 1..."
-        snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
-        echo "Contribution 2..."
-        snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
-        echo "Finalisation de la phase 1 avec le beacon..."
-        snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
-        echo "Préparation de la phase 2..."
-        snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
-        echo "✅ Phase 1 terminée"
+        # beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
+        # echo "Création de la ceremony Powers of Tau..."
+        # snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
+        # echo "Contribution 1..."
+        # snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        # echo "Contribution 2..."
+        # snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        # echo "Finalisation de la phase 1 avec le beacon..."
+        # snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
+        # echo "Préparation de la phase 2..."
+        # snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
+        # echo "✅ Phase 1 terminée"
+        # wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_18.ptau -O pot18_final.ptau
+
         cd ..
     else
         echo "La ceremony Powers of Tau est déjà terminée."
@@ -137,15 +139,15 @@ trusted_setup() {
         cd ..
     
         # Copier les fichiers nécessaires dans le répertoire principal
-        cp build/licenseA_js/licenseA.wasm ../data/proof_license/circuit.wasm
-        cp build/key_final.zkey ../data//proof_license/circuit.zkey
-        cp build/verification_key.json ../data/proof_license/verification_key.json
-        cp build/licenseA_js/generate_witness.js ../data/proof_license/generate_witness.cjs
-        cp build/licenseA_js/witness_calculator.js ../data/proof_license/witness_calculator.cjs
+        cp build/licenseA_js/licenseA.wasm .data/proof_license/circuit.wasm
+        cp build/key_final.zkey data/proof_license/circuit.zkey
+        cp build/verification_key.json data/proof_license/verification_key.json
+        cp build/licenseA_js/generate_witness.js data/proof_license/generate_witness.cjs
+        cp build/licenseA_js/witness_calculator.js data/proof_license/witness_calculator.cjs
 
         cd build
-        
-        R1CS="ls18.r1cs"
+
+        R1CS="Is18.r1cs"
         PTAU="ptau/pot18_final.ptau"
         # Étape 1 : Génération initiale du zkey
         echo "📦 Setup initial du circuit..."
@@ -168,11 +170,11 @@ trusted_setup() {
         cd ..
     
         # Copier les fichiers nécessaires dans le répertoire principal
-        cp build/ls18_js/ls18.wasm ../data/ls18/circuit.wasm
-        cp build/proof_of_license_final.zkey ../data/ls18/circuit.zkey
-        cp build/verification_key.json ../data/ls18/verification_key.json
-        cp build/ls18_js/generate_witness.js ../data/ls18/generate_witness.cjs
-        cp build/ls18_js/witness_calculator.js ../data/ls18/witness_calculator.cjs
+        cp build/Is18_js/Is18.wasm data/Is18/circuit.wasm
+        cp build/proof_of_license_final.zkey data/Is18/circuit.zkey
+        cp build/verification_key.json data/Is18/verification_key.json
+        cp build/Is18_js/generate_witness.js data/Is18/generate_witness.cjs
+        cp build/Is18_js/witness_calculator.js data/Is18/witness_calculator.cjs
     
     else
         echo "Les fichiers de setup existent déjà, aucune action nécessaire."

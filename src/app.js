@@ -29,7 +29,7 @@ class ZKPLicenseApp {
             age18: {
                 name: 'Preuve d\'Âge (18 ans)',
                 description: 'Prouver qu\'on a 18 ans ou plus',
-                basePath: '../data/ls18',
+                basePath: '../data/Is18',
                 files: { wasm: null, zkey: null, vkey: null, witness: null }
             }
         };
