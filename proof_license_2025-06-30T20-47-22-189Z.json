@@ -1,0 +1,51 @@
+{
+  "proof": {
+    "pi_a": [
+      "21848765777770606190007143724629366326158828189631096931115768708006063818501",
+      "8205691018851193916307676291535746569692836752099032102090356108903055812194",
+      "1"
+    ],
+    "pi_b": [
+      [
+        "6642326652166644453207669719185265919941508126819877987486972585606048275134",
+        "1252859794030519388061604724062270940220900958255741226162735156771886748546"
+      ],
+      [
+        "14899400745963198870402130526576263873780933219881291840528929329445518315152",
+        "245608977936469249756434296341092128546608415439714533201477646699779361771"
+      ],
+      [
+        "1",
+        "0"
+      ]
+    ],
+    "pi_c": [
+      "10971102885046459467938481961369693011314467093709506985388239431666502510118",
+      "10725755407767995513461139633831925640981150391816470841985719515517818099893",
+      "1"
+    ],
+    "protocol": "groth16",
+    "curve": "bn128"
+  },
+  "publicSignals": [
+    "1"
+  ],
+  "timestamp": "2025-06-30T20:47:18.902Z",
+  "input_info": {
+    "name": "caca",
+    "surname": "caca",
+    "dob": "1990-01-01",
+    "license": "A",
+    "hasLicenseA": true
+  },
+  "metadata": {
+    "circuit_files": {
+      "wasm": "/mnt/Desktop/Zero-Knowledge-Identity-Verification/data/proof_license/circuit.wasm",
+      "zkey": "/mnt/Desktop/Zero-Knowledge-Identity-Verification/data/proof_license/circuit.zkey",
+      "witness_script": "/mnt/Desktop/Zero-Knowledge-Identity-Verification/data/proof_license/generate_witness.cjs"
+    },
+    "snarkjs_version": "0.7.4",
+    "method": "external_witness_script_only",
+    "witness_generator": "custom_script"
+  }
+}

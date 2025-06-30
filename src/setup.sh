@@ -84,19 +84,19 @@ trusted_setup() {
     if [ ! -f "ptau/pot18_final.ptau" ]; then
 
         cd ptau
-        beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
-        echo "Création de la ceremony Powers of Tau..."
-        snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
-        echo "Contribution 1..."
-        snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
-        echo "Contribution 2..."
-        snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
-        echo "Finalisation de la phase 1 avec le beacon..."
-        snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
-        echo "Préparation de la phase 2..."
-        snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
-        echo "✅ Phase 1 terminée"
-        # wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_18.ptau -O pot18_final.ptau
+        # beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
+        # echo "Création de la ceremony Powers of Tau..."
+        # snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
+        # echo "Contribution 1..."
+        # snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        # echo "Contribution 2..."
+        # snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        # echo "Finalisation de la phase 1 avec le beacon..."
+        # snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
+        # echo "Préparation de la phase 2..."
+        # snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
+        # echo "✅ Phase 1 terminée"
+        wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_18.ptau -O pot18_final.ptau
 
         cd ..
     else

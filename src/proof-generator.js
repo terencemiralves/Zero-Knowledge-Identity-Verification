@@ -101,14 +101,14 @@ export class ProofGenerator {
                     surname: stringToAsciiArray(testData.surname, 16),
                     dob: formatDateToAscii(testData.dob),
                     license: [testData.license.charCodeAt(0)],
-                    hasLicenseA: testData.license === 'A' ? 1 : 0
+                    // hasLicenseA: testData.license === 'A' ? 1 : 0
                 };
             } else if (circuitType === 'age18') {
                 input = {
                     name: stringToAsciiArray(testData.name, 16),
                     surname: stringToAsciiArray(testData.surname, 16),
                     dob: formatDateToAscii(testData.dob),
-                    isOver18: testData.age >= 18 ? 1 : 0
+                    // isOver18: testData.age >= 18 ? 1 : 0
                 };
             }
 
