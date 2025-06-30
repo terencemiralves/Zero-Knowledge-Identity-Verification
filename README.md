@@ -7,7 +7,7 @@ Application Node.js pour la vérification de permis utilisant des preuves à div
 ```bash
 # Cloner le repository
 git clone <repository-url>
-cd zkp-license-verification-js
+cd Zero-Knowledge-Identity-Verification
 
 # Installer les dépendances
 npm install
