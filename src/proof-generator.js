@@ -10,7 +10,125 @@ const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export class ProofGenerator {
+export class ProofGenerator {   
+
+    async generateProofForCircuit(userInput, files, circuitType) {
+        try {
+            // Validation des inputs selon le type de circuit
+            this.validateInputsForCircuit(userInput, circuitType);
+
+            let input;
+            
+            if (circuitType === 'license') {
+                // Préparation des inputs pour circuit de permis
+                input = {
+                    name: stringToAsciiArray(userInput.name, 16),
+                    surname: stringToAsciiArray(userInput.surname, 16),
+                    dob: formatDateToAscii(userInput.dob),
+                    license: [userInput.license.charCodeAt(0)],
+                    hasLicenseA: userInput.license === 'A' ? 1 : 0
+                };
+            } else if (circuitType === 'age18') {
+                // Préparation des inputs pour circuit d'âge
+                input = {
+                    name: stringToAsciiArray(userInput.name, 16),
+                    surname: stringToAsciiArray(userInput.surname, 16),
+                    dob: formatDateToAscii(userInput.dob),
+                    isOver18: userInput.age >= 18 ? 1 : 0
+                };
+            }
+
+            console.log(`📝 Input préparé pour ${circuitType}:`, JSON.stringify(input, null, 2));
+
+            // Génération de la preuve
+            const result = await this.generateProofWithExternalScript(input, files, userInput, circuitType);
+
+            return result;
+
+        } catch (error) {
+            throw new Error(`Erreur lors de la génération de preuve ${circuitType}: ${error.message}`);
+        }
+    }
+
+    validateInputsForCircuit(userInput, circuitType) {
+        const errors = [];
+
+        // Validations communes
+        if (!userInput.name || userInput.name.length > 16) {
+            errors.push('Nom invalide (max 16 caractères)');
+        }
+
+        if (!userInput.surname || userInput.surname.length > 16) {
+            errors.push('Prénom invalide (max 16 caractères)');
+        }
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(userInput.dob)) {
+            errors.push('Date de naissance invalide (format YYYY-MM-DD)');
+        }
+
+        // Validations spécifiques
+        if (circuitType === 'license') {
+            if (!['A', 'B', 'C'].includes(userInput.license)) {
+                errors.push('Type de permis invalide (A, B, ou C)');
+            }
+        } else if (circuitType === 'age18') {
+            if (typeof userInput.age !== 'number' || userInput.age < 0) {
+                errors.push('Âge invalide');
+            }
+        }
+
+        if (errors.length > 0) {
+            throw new Error(`Erreurs de validation pour ${circuitType}:\n${errors.join('\n')}`);
+        }
+
+        return true;
+    }
+
+    async testCircuit(files, circuitType, testData) {
+        console.log(`🧪 Test du circuit ${circuitType}...`);
+        
+        const tempDir = path.join(__dirname, 'temp');
+        await fs.ensureDir(tempDir);
+        
+        const testInputFile = path.join(tempDir, `test_input_${circuitType}.json`);
+        const testWitnessFile = path.join(tempDir, `test_witness_${circuitType}.wtns`);
+
+        try {
+            let input;
+            if (circuitType === 'license') {
+                input = {
+                    name: stringToAsciiArray(testData.name, 16),
+                    surname: stringToAsciiArray(testData.surname, 16),
+                    dob: formatDateToAscii(testData.dob),
+                    license: [testData.license.charCodeAt(0)],
+                    hasLicenseA: testData.license === 'A' ? 1 : 0
+                };
+            } else if (circuitType === 'age18') {
+                input = {
+                    name: stringToAsciiArray(testData.name, 16),
+                    surname: stringToAsciiArray(testData.surname, 16),
+                    dob: formatDateToAscii(testData.dob),
+                    isOver18: testData.age >= 18 ? 1 : 0
+                };
+            }
+
+            await fs.writeJson(testInputFile, input);
+            await this.generateWitnessWithExternalScript(
+                files.wasm,
+                testInputFile,
+                testWitnessFile,
+                files.witness
+            );
+            
+            const exists = await fs.pathExists(testWitnessFile);
+            await this.cleanupTempFiles([testInputFile, testWitnessFile]);
+            
+            return exists;
+        } catch (error) {
+            await this.cleanupTempFiles([testInputFile, testWitnessFile]);
+            throw error;
+        }
+    }
     async generateProof(userInput, files) {
         try {
             // Validation des inputs

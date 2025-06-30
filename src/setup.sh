@@ -45,7 +45,16 @@ compile_circuit() {
     mkdir -p build
     
     # Compiler le circuit
-    circom -l ./node_modules/ build/licenseA.circom --r1cs --wasm --sym -o build/ 
+    circom -l ./node_modules/ ./data/proof_license/licenseA.circom --r1cs --wasm --sym -o build/ 
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Circuit compilé avec succès"
+    else
+        echo "❌ Erreur lors de la compilation du circuit"
+        exit 1
+    fi
+
+    circom -l ./node_modules/ ./data/ls18/ls18.circom --r1cs --wasm --sym -o build/ 
     
     if [ $? -eq 0 ]; then
         echo "✅ Circuit compilé avec succès"
@@ -63,18 +72,18 @@ trusted_setup() {
     
     # Phase 1: Powers of Tau ceremony
     echo "Phase 1: Powers of Tau ceremony..."
-    if [ ! -d "data/ptau" ]; then
-        mkdir -p data/ptau
+    if [ ! -d "ptau" ]; then
+        mkdir -p ptau
     fi
-    if [ ! -f "data/ptau/pot18_0000.ptau" ]; then
-        touch data/ptau/pot18_0000.ptau
+    if [ ! -f "ptau/pot18_0000.ptau" ]; then
+        touch ptau/pot18_0000.ptau
     fi
-    if [ ! -f "data/ptau/pot18_beacon.ptau" ]; then
-        touch data/ptau/pot18_beacon.ptau
+    if [ ! -f "ptau/pot18_beacon.ptau" ]; then
+        touch ptau/pot18_beacon.ptau
     fi
-    if [ ! -f "data/ptau/pot18_final.ptau" ]; then
+    if [ ! -f "ptau/pot18_final.ptau" ]; then
 
-        cd data/ptau
+        cd ptau
         beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
         echo "Création de la ceremony Powers of Tau..."
         snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
@@ -87,7 +96,7 @@ trusted_setup() {
         echo "Préparation de la phase 2..."
         snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
         echo "✅ Phase 1 terminée"
-        cd ../..
+        cd ..
     else
         echo "La ceremony Powers of Tau est déjà terminée."
     fi
@@ -98,11 +107,11 @@ trusted_setup() {
     echo "🔧 Phase 2 : Circuit-specific setup..."
     
     # Définir les chemins
-    R1CS="proof_of_license.r1cs"
-    PTAU="data/ptau/pot18_final.ptau"
-    ZKEY0="proof_of_license_0000.zkey"
-    ZKEY1="proof_of_license_0001.zkey"
-    ZKEY_FINAL="proof_of_license_final.zkey"
+    R1CS="licenseA.r1cs"
+    PTAU="ptau/pot18_final.ptau"
+    ZKEY0="key_0000.zkey"
+    ZKEY1="key_0001.zkey"
+    ZKEY_FINAL="key_final.zkey"
     VKEY_JSON="verification_key.json"
 
     if [ ! -f "$ZKEY_FINAL" ] || [ ! -f "$VKEY_JSON" ]; then
@@ -128,106 +137,67 @@ trusted_setup() {
         cd ..
     
         # Copier les fichiers nécessaires dans le répertoire principal
-        cp build/proof_of_license_js/proof_of_license.wasm ./
-        cp build/proof_of_license_final.zkey ./
-        cp build/verification_key.json ./
+        cp build/licenseA_js/licenseA.wasm ../data/proof_license/circuit.wasm
+        cp build/key_final.zkey ../data//proof_license/circuit.zkey
+        cp build/verification_key.json ../data/proof_license/verification_key.json
+        cp build/licenseA_js/generate_witness.js ../data/proof_license/generate_witness.cjs
+        cp build/licenseA_js/witness_calculator.js ../data/proof_license/witness_calculator.cjs
+
+        cd build
+        
+        R1CS="ls18.r1cs"
+        PTAU="ptau/pot18_final.ptau"
+        # Étape 1 : Génération initiale du zkey
+        echo "📦 Setup initial du circuit..."
+        snarkjs zkey new $R1CS $PTAU $ZKEY0
+
+        # Étape 2 : Contribution au zkey
+        echo "🧑‍💻 Contribution au zkey..."
+        snarkjs zkey contribute $ZKEY0 $ZKEY1 --name="Contribution circuit" --entropy="$(head -c 64 /dev/urandom | base64)"
+
+        # Étape 3 : Beacon pour sécuriser le zkey final
+        echo "⚡ Beacon pour finaliser le zkey..."
+        snarkjs zkey beacon $ZKEY1 $ZKEY_FINAL \
+        "$(head -c 32 /dev/urandom | xxd -p -c 32)" \
+        10 -v
+
+        # Étape 4 : Export de la clé de vérification
+        echo "🔐 Export de la clé de vérification..."
+        snarkjs zkey export verificationkey $ZKEY_FINAL $VKEY_JSON
+        echo "✅ Phase 2 terminée avec succès"
+        cd ..
+    
+        # Copier les fichiers nécessaires dans le répertoire principal
+        cp build/ls18_js/ls18.wasm ../data/ls18/circuit.wasm
+        cp build/proof_of_license_final.zkey ../data/ls18/circuit.zkey
+        cp build/verification_key.json ../data/ls18/verification_key.json
+        cp build/ls18_js/generate_witness.js ../data/ls18/generate_witness.cjs
+        cp build/ls18_js/witness_calculator.js ../data/ls18/witness_calculator.cjs
+    
     else
         echo "Les fichiers de setup existent déjà, aucune action nécessaire."
         cd ..
     fi
-
-    
-    
-    
     echo "✅ Trusted setup terminé"
 }
 
-# Créer un fichier de test
-create_test_file() {
-    echo "📝 Création du fichier de test..."
-    
-    cat > test_verification.js << 'EOF'
-const { LicenseVerificationSystem, createTestUser } = require('./license_verification.js');
-
-async function testSystem() {
-    console.log('🧪 Test du système de vérification');
-    
-    const system = new LicenseVerificationSystem();
-    await system.initialize();
-    
-    // Test avec un utilisateur valide (permis A)
-    console.log('\n--- Test utilisateur valide ---');
-    const validUser = createTestUser('Jean', 'Durand', '2000-01-01', 'A', '2026-01-01');
-    const result1 = await system.demo();
-    console.log('Résultat:', result1);
-    
-    // Test avec un utilisateur invalide (permis B)
-    console.log('\n--- Test utilisateur invalide ---');
-    try {
-        const invalidUser = createTestUser('Marie', 'Martin', '1995-05-15', 'B', '2025-12-31');
-        const proofData = await system.generateProof(invalidUser);
-        const isValid = await system.verifyProof(proofData.proof, proofData.publicSignals);
-        console.log('Résultat preuve permis B:', isValid); // Devrait être false
-    } catch (error) {
-        console.log('✅ Erreur attendue pour permis B:', error.message);
-    }
-}
-
-testSystem().catch(console.error);
-EOF
-    
-    echo "✅ Fichier de test créé"
-}
-
-# Créer le package.json s'il n'existe pas
-create_package_json() {
-    if [ ! -f "package.json" ]; then
-        cat > package.json << 'EOF'
-{
-  "name": "zk-license-verification",
-  "version": "1.0.0",
-  "description": "Système de vérification de permis zero-knowledge",
-  "main": "license_verification.js",
-  "scripts": {
-    "setup": "./setup.sh",
-    "test": "node test_verification.js",
-    "demo": "node license_verification.js"
-  },
-  "dependencies": {
-    "snarkjs": "^0.7.0",
-    "circomlib": "^2.0.5",
-    "ffjavascript": "^0.2.60"
-  },
-  "keywords": ["zero-knowledge", "zk-snarks", "identity", "verification"],
-  "author": "Assistant",
-  "license": "MIT"
-}
-EOF
-    fi
-}
 
 # Fonction principale
 main() {
     check_dependencies
-    create_package_json
     install_packages
     compile_circuit
-    trusted_setup
-    create_test_file
-    
+    trusted_setup    
     echo ""
     echo "🎉 Setup terminé avec succès!"
     echo "=================================================="
     echo "Fichiers générés:"
-    echo "  - proof_of_license.wasm (circuit compilé)"
-    echo "  - proof_of_license_final.zkey (clé de proving)"
+    echo "  - circuit.wasm (circuit compilé)"
+    echo "  - circuit.zkey (clé de proving)"
     echo "  - verification_key.json (clé de vérification)"
-    echo "  - license_verification.js (système principal)"
-    echo "  - test_verification.js (tests)"
     echo ""
     echo "Pour tester le système:"
-    echo "  npm run demo    # Démonstration complète"
-    echo "  npm test        # Tests approfondis"
+    echo "  npm start       # Démonstration complète"
     echo ""
     echo "Le système est prêt à être utilisé! 🚀"
 }
