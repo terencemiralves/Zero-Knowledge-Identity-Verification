@@ -320,8 +320,8 @@ class ZKPLicenseApp {
                 spinner.succeed('Preuve générée avec succès!');
 
                 // Affichage du résultat
-                console.log(chalk.green('\n📋 Résultat:'));
-                console.log(JSON.stringify(result, null, 2));
+                // console.log(chalk.green('\n📋 Résultat:'));
+                // console.log(JSON.stringify(result, null, 2));
 
                 // Proposer de sauvegarder
                 const { save } = await inquirer.prompt({
@@ -417,7 +417,6 @@ class ZKPLicenseApp {
                 const fileContent = await fs.readJson(filename);
                 
                 // Debug: afficher la structure du fichier
-                console.log(chalk.yellow('🐛 Analyse du fichier chargé...'));
                 this.proofVerifier.debugProofStructure(fileContent);
                 
                 // Vérifier si les signaux publics sont présents
@@ -455,7 +454,7 @@ class ZKPLicenseApp {
                     });
                     
                     publicSignals = JSON.parse(inputSignals);
-                    console.log(chalk.green(`✅ Signaux publics saisis: ${JSON.stringify(publicSignals)}`));
+                    // console.log(chalk.green(`✅ Signaux publics saisis: ${JSON.stringify(publicSignals)}`));
                 }
                 
                 proofData = fileContent;
@@ -515,8 +514,8 @@ class ZKPLicenseApp {
                     console.log(chalk.red.bold('\n❌ PREUVE INVALIDE'));
                 }
 
-                console.log(chalk.cyan('\n📊 Détails:'));
-                console.log(JSON.stringify(result, null, 2));
+                // console.log(chalk.cyan('\n📊 Détails:'));
+                // console.log(JSON.stringify(result, null, 2));
 
             } catch (verificationError) {
                 spinner.fail('Vérification échouée');

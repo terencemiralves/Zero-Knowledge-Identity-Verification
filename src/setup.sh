@@ -84,18 +84,18 @@ trusted_setup() {
     if [ ! -f "ptau/pot18_final.ptau" ]; then
 
         cd ptau
-        # beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
-        # echo "Création de la ceremony Powers of Tau..."
-        # snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
-        # echo "Contribution 1..."
-        # snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
-        # echo "Contribution 2..."
-        # snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
-        # echo "Finalisation de la phase 1 avec le beacon..."
-        # snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
-        # echo "Préparation de la phase 2..."
-        # snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
-        # echo "✅ Phase 1 terminée"
+        beacon_entropy="$(head -c 32 /dev/urandom | xxd -p -c 32)"
+        echo "Création de la ceremony Powers of Tau..."
+        snarkjs powersoftau new bn128 18 pot18_0000.ptau -v
+        echo "Contribution 1..."
+        snarkjs powersoftau contribute pot18_0000.ptau pot18_0001.ptau --name="Contrib 1" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        echo "Contribution 2..."
+        snarkjs powersoftau contribute pot18_0001.ptau pot18_0002.ptau --name="Contrib 2" --entropy="$(head -c 64 /dev/urandom | base64)" -v
+        echo "Finalisation de la phase 1 avec le beacon..."
+        snarkjs powersoftau beacon pot18_0002.ptau pot18_beacon.ptau  "$beacon_entropy" 10 -v
+        echo "Préparation de la phase 2..."
+        snarkjs powersoftau prepare phase2 pot18_beacon.ptau pot18_final.ptau -v
+        echo "✅ Phase 1 terminée"
         # wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_18.ptau -O pot18_final.ptau
 
         cd ..
@@ -139,16 +139,27 @@ trusted_setup() {
         cd ..
     
         # Copier les fichiers nécessaires dans le répertoire principal
-        cp build/licenseA_js/licenseA.wasm .data/proof_license/circuit.wasm
+        cp build/licenseA_js/licenseA.wasm data/proof_license/circuit.wasm
         cp build/key_final.zkey data/proof_license/circuit.zkey
         cp build/verification_key.json data/proof_license/verification_key.json
         cp build/licenseA_js/generate_witness.js data/proof_license/generate_witness.cjs
         cp build/licenseA_js/witness_calculator.js data/proof_license/witness_calculator.cjs
+        sed -i 's|require("./witness_calculator.js")|require("./witness_calculator.cjs")|' data/proof_license/generate_witness.cjs
+    else
+        echo "Les fichiers de setup existent déjà, aucune action nécessaire."
+        cd ..
+    fi
 
+    R1CS="Is18.r1cs"
+    PTAU="ptau/pot18_final.ptau"
+    ZKEY0="is18_key_0000.zkey"
+    ZKEY1="is18_key_0001.zkey"
+    ZKEY_FINAL="is18_key_final.zkey"
+    VKEY_JSON="is18_verification_key.json"
+
+    if [ ! -f "$ZKEY_FINAL" ] || [ ! -f "$VKEY_JSON" ]; then
         cd build
-
-        R1CS="Is18.r1cs"
-        PTAU="ptau/pot18_final.ptau"
+        
         # Étape 1 : Génération initiale du zkey
         echo "📦 Setup initial du circuit..."
         snarkjs zkey new $R1CS $PTAU $ZKEY0
@@ -171,14 +182,13 @@ trusted_setup() {
     
         # Copier les fichiers nécessaires dans le répertoire principal
         cp build/Is18_js/Is18.wasm data/Is18/circuit.wasm
-        cp build/proof_of_license_final.zkey data/Is18/circuit.zkey
-        cp build/verification_key.json data/Is18/verification_key.json
+        cp build/is18_key_final.zkey data/Is18/circuit.zkey
+        cp build/is18_verification_key.json data/Is18/verification_key.json
         cp build/Is18_js/generate_witness.js data/Is18/generate_witness.cjs
         cp build/Is18_js/witness_calculator.js data/Is18/witness_calculator.cjs
-    
+        sed -i 's|require("./witness_calculator.js")|require("./witness_calculator.cjs")|' data/Is18/generate_witness.cjs
     else
         echo "Les fichiers de setup existent déjà, aucune action nécessaire."
-        cd ..
     fi
     echo "✅ Trusted setup terminé"
 }

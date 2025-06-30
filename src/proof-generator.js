@@ -25,20 +25,20 @@ export class ProofGenerator {
                     name: stringToAsciiArray(userInput.name, 16),
                     surname: stringToAsciiArray(userInput.surname, 16),
                     dob: formatDateToAscii(userInput.dob),
-                    license: [userInput.license.charCodeAt(0)],
-                    hasLicenseA: userInput.license === 'A' ? 1 : 0
+                    license: [userInput.license.charCodeAt(0)]
+                    // hasLicenseA: userInput.license === 'A' ? 1 : 0
                 };
             } else if (circuitType === 'age18') {
                 // Préparation des inputs pour circuit d'âge
                 input = {
                     name: stringToAsciiArray(userInput.name, 16),
                     surname: stringToAsciiArray(userInput.surname, 16),
-                    dob: formatDateToAscii(userInput.dob),
-                    isOver18: userInput.age >= 18 ? 1 : 0
+                    dob: formatDateToAscii(userInput.dob)
+                    // isOver18: userInput.age >= 18 ? 1 : 0
                 };
             }
 
-            console.log(`📝 Input préparé pour ${circuitType}:`, JSON.stringify(input, null, 2));
+            // console.log(`📝 Input préparé pour ${circuitType}:`, JSON.stringify(input, null, 2));
 
             // Génération de la preuve
             const result = await this.generateProofWithExternalScript(input, files, userInput, circuitType);
@@ -147,7 +147,7 @@ export class ProofGenerator {
                 license: [userInput.license.charCodeAt(0)]
             };
 
-            console.log('📝 Input préparé:', JSON.stringify(input, null, 2));
+            // console.log('📝 Input préparé:', JSON.stringify(input, null, 2));
 
             // Génération de la preuve avec script externe uniquement
             const result = await this.generateProofWithExternalScript(input, files, userInput);
@@ -161,7 +161,6 @@ export class ProofGenerator {
 
     async generateProofWithExternalScript(input, files, originalInput) {
         try {
-            console.log('🔧 Génération avec script externe exclusivement...');
             
             // Vérification que tous les fichiers requis existent
             const requiredFiles = {
@@ -189,8 +188,6 @@ export class ProofGenerator {
                 await fs.writeJson(inputFile, input, { spaces: 2 });
                 console.log(`📁 Input écrit dans: ${inputFile}`);
 
-                // Génération du witness avec votre script
-                console.log('🔧 Génération du witness avec script externe...');
                 await this.generateWitnessWithExternalScript(
                     files.wasm, 
                     inputFile, 
@@ -254,14 +251,14 @@ export class ProofGenerator {
 
     async generateWitnessWithExternalScript(wasmFile, inputFile, outputFile, witnessScript) {
         try {
-            console.log(`🔧 Exécution du script witness: ${witnessScript}`);
-            console.log(`📄 WASM: ${wasmFile}`);
-            console.log(`📄 Input: ${inputFile}`);
-            console.log(`📄 Output: ${outputFile}`);
+            // console.log(`🔧 Exécution du script witness: ${witnessScript}`);
+            // console.log(`📄 WASM: ${wasmFile}`);
+            // console.log(`📄 Input: ${inputFile}`);
+            // console.log(`📄 Output: ${outputFile}`);
 
             // Construction de la commande
             const command = `node "${witnessScript}" "${wasmFile}" "${inputFile}" "${outputFile}"`;
-            console.log(`🚀 Commande: ${command}`);
+            // console.log(`🚀 Commande: ${command}`);
 
             // Exécution du script avec timeout étendu
             const { stdout, stderr } = await execAsync(command, {
@@ -289,7 +286,7 @@ export class ProofGenerator {
                 throw new Error('Le fichier witness généré est vide');
             }
 
-            console.log(`✅ Witness généré avec succès (${stats.size} bytes)`);
+            // console.log(`✅ Witness généré avec succès (${stats.size} bytes)`);
 
         } catch (error) {
             if (error.code === 'ENOENT') {
@@ -309,7 +306,7 @@ export class ProofGenerator {
             try {
                 if (await fs.pathExists(file)) {
                     await fs.remove(file);
-                    console.log(`🗑️ Fichier temporaire supprimé: ${path.basename(file)}`);
+                    // console.log(`🗑️ Fichier temporaire supprimé: ${path.basename(file)}`);
                 }
             } catch (error) {
                 console.warn(`⚠️ Impossible de supprimer ${file}: ${error.message}`);

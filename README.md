@@ -67,7 +67,7 @@ L'application propose un menu interactif avec les options suivantes :
 ### Scripts disponibles
 
 ```bash
-npm setup     # Pour regénérer les fichiers nécessaires
+npm run setup     # Pour regénérer les fichiers nécessaires
 npm start     # Démarrer l'application
 npm run dev   # Mode développement avec auto-reload
 ```
