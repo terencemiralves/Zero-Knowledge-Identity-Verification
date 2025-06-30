@@ -197,6 +197,9 @@ export class ProofGenerator {
                 console.warn(`⚠️ Impossible de supprimer ${file}: ${error.message}`);
             }
         }
+        fs.remove(path.join(__dirname, 'temp')).catch(err => {
+            console.warn(`⚠️ Impossible de supprimer le dossier temporaire: ${err.message}`);
+        });
     }
 
     /**

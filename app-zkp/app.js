@@ -50,10 +50,10 @@ class ZKPLicenseApp {
         const spinner = ora('Vérification des fichiers requis...').start();
         
         const filesToCheck = [
-            { name: 'circuit.wasm', key: 'wasm', alt: ['LicenseA.wasm', 'LicenseB.wasm', 'LicenseC.wasm'], required: true },
-            { name: 'circuit.zkey', key: 'zkey', alt: ['LicenseA.zkey', 'LicenseB.zkey', 'LicenseC.zkey'], required: true },
-            { name: 'verification_key.json', key: 'vkey', alt: ['vkey.json'], required: true },
-            { name: 'generate_witness.cjs', key: 'witness', alt: ['witness.js'], required: true }
+            { name: 'data/circuit.wasm', key: 'wasm', alt: ['data/LicenseA.wasm', 'data/LicenseB.wasm', 'data/LicenseC.wasm'], required: true },
+            { name: 'data/circuit.zkey', key: 'zkey', alt: ['data/LicenseA.zkey', 'data/LicenseB.zkey', 'data/LicenseC.zkey'], required: true },
+            { name: 'data/verification_key.json', key: 'vkey', alt: ['data/vkey.json'], required: true },
+            { name: 'data/generate_witness.cjs', key: 'witness', alt: ['data/witness.js'], required: true }
         ];
 
         let requiredFound = 0;
